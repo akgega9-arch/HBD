@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>countdown</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--wine:#170c14;--plum:#3b1f31;--rose:#d9a3a8;--gold:#e3c88e;--ink:#f6e9e6;--mute:#b9a2a6}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(ellipse at 50% 20%,var(--plum),var(--wine) 70%);color:var(--ink);font-family:"Jost",system-ui,sans-serif;overflow-x:hidden}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 22px;text-align:center;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity 1s,filter 1s,transform 1s;z-index:1;filter:blur(8px);transform:scale(1.04)}
+.screen.on{opacity:1;pointer-events:auto;filter:none;transform:none}
+.screen.on>*{animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+.screen.on>*:nth-child(2){animation-delay:.15s}.screen.on>*:nth-child(3){animation-delay:.3s}
+.screen.on>*:nth-child(4){animation-delay:.45s}.screen.on>*:nth-child(5){animation-delay:.6s}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+#bg{position:fixed;inset:0;pointer-events:none;z-index:0;transition:opacity 1.5s}
+body.dark #bg{opacity:0}
+h1{font:500 clamp(2.4rem,9vw,4rem)/1.1 "Playfair Display",serif;margin:0}
+h1 i{background:linear-gradient(90deg,var(--rose),var(--gold),var(--rose));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite}
+@keyframes shine{to{background-position:-200% 0}}
+p{margin:0}
+.mute{color:var(--mute);font-size:.95rem}
+:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+
+/* loading */
+.loadtxt{font:italic 1.15rem "Playfair Display",serif;color:var(--mute);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* pin */
+#pin h1{font-size:clamp(1.8rem,6vw,2.4rem);margin-bottom:8px}
+.dots{display:flex;gap:16px;margin:26px 0}
+.dots span{width:12px;height:12px;border:1px solid var(--rose);border-radius:50%;transition:.2s}
+.dots span.f{background:var(--gold);border-color:var(--gold);box-shadow:0 0 12px #e3c88e88;animation:pop .3s}
+@keyframes pop{50%{transform:scale(1.7)}}
+.pad{display:grid;grid-template-columns:repeat(3,64px);gap:12px}
+.pad button{height:56px;border-radius:50%;border:1px solid #ffffff22;background:#ffffff0a;color:var(--ink);font:400 1.25rem "Jost",sans-serif;cursor:pointer;transition:.2s}
+.pad button:hover{background:#d9a3a822;border-color:var(--rose)}
+.pad .u{color:var(--gold);font-size:1rem}
+.msg{min-height:22px;margin-top:20px;font-size:.85rem;color:var(--mute)}
+.music{position:fixed;top:14px;right:14px;z-index:20;width:40px;height:40px;border-radius:50%;border:1px solid #ffffff2a;background:#0f0a10aa;color:var(--gold);font-size:1.05rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 1s}
+.music.show{opacity:.8;pointer-events:auto}.music.show.off{opacity:.4}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+/* kue */
+.cakeBtn{background:none;border:0;cursor:pointer;color:inherit;padding:20px;margin:18px 0 6px}
+.cake{position:relative;width:200px;height:170px;margin:0 auto;animation:bob 4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.tier{position:absolute;left:50%;transform:translateX(-50%);border-radius:10px 10px 6px 6px}
+.t1{bottom:0;width:200px;height:62px;background:linear-gradient(#f3c2c7,#e7a1aa)}
+.t2{bottom:62px;width:148px;height:50px;background:linear-gradient(#fbe2dd,#f0c3c4)}
+.t3{bottom:112px;width:96px;height:36px;background:linear-gradient(#f3c2c7,#e7a1aa)}
+.t1:before,.t2:before,.t3:before{content:"";position:absolute;left:0;right:0;top:0;height:11px;background:#fff6f0;border-radius:10px 10px 12px 12px}
+.can{position:absolute;bottom:148px;width:7px;height:22px;background:linear-gradient(90deg,#fff,#ddd);border-radius:2px}
+.can i{position:absolute;bottom:22px;left:-3px;width:13px;height:20px;border-radius:50% 50% 50% 50%/65% 65% 35% 35%;
+ background:radial-gradient(ellipse at 50% 75%,#fff6d8 0 20%,var(--gold) 50%,#ff9a3c 85%);box-shadow:0 0 20px 6px #ffcf7a44;transform-origin:50% 100%;animation:fl 1.4s ease-in-out infinite}
+@keyframes fl{50%{transform:scale(.92,1.08) rotate(2deg)}}
+.out .can i{animation:none;transform:scale(0);opacity:0;transition:.5s}
+.big{margin-bottom:10px}
+
+/* surat */
+.letter{max-width:480px;text-align:left;background:#ffffff0a;border:1px solid #ffffff1a;border-radius:6px;padding:36px 32px}
+.letter h2{font:500 2rem "Playfair Display",serif;margin:0 0 20px}
+.letter h2 i{color:var(--rose)}
+.letter p{line-height:1.85;margin-bottom:1.1em;font-weight:300;font-size:1rem}
+.sign{text-align:right;font:italic 1.4rem "Playfair Display",serif;color:var(--gold);margin:26px 0 0!important}
+.btn{margin-top:26px;padding:12px 26px;border-radius:999px;border:1px solid var(--gold);background:transparent;color:var(--gold);font:400 .95rem "Jost",sans-serif;cursor:pointer;transition:.2s}
+.btn:hover{background:#e3c88e1c}
+
+.caret{display:inline-block;width:1px;height:1em;background:var(--gold);margin-left:2px;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+#sign{opacity:0;transition:opacity 1.4s}
+/* gembok tanggal */
+.cd{display:flex;gap:18px;margin:26px 0 8px}
+.cd div{min-width:62px}
+.cd b{display:block;font:500 2.3rem "Playfair Display",serif;color:var(--gold)}
+.cd small{color:var(--mute);font-size:.75rem}
+/* doa melayang */
+.field{position:relative;width:min(460px,92vw);height:min(430px,56vh);margin:6px 0 16px}
+.wish{position:absolute;width:108px;height:108px;margin:-54px 0 0 -54px;border-radius:50%;border:1px solid #ffffff38;
+  background:radial-gradient(circle at 32% 28%,#ffffff2e,#d9a3a81c 55%,#ffffff08);color:var(--ink);font:400 .78rem/1.35 "Jost",sans-serif;padding:14px;
+  display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;box-shadow:inset 0 0 18px #ffffff10,0 0 22px #d9a3a822;
+  animation:drift var(--dur) ease-in-out var(--dl) infinite alternate}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(var(--dx),var(--dy))}}
+.wish.pop{animation:popb .4s ease-out forwards;pointer-events:none}
+@keyframes popb{to{transform:scale(1.5);opacity:0}}
+/* amplop */
+.env{position:relative;width:260px;height:170px;margin:30px auto 10px;background:none;border:0;padding:0;cursor:pointer;color:inherit;filter:drop-shadow(0 18px 24px #0008);transition:transform .35s}
+.env:hover{transform:translateY(-4px)}
+.env>*{position:absolute;inset:0}
+.env .eb{background:#6e3548;border-radius:6px}
+.env .ep{left:18px;right:18px;top:10px;bottom:14px;background:#fbf1e6;border-radius:3px;z-index:1;transition:transform .9s ease .55s;display:flex;flex-direction:column;align-items:center;padding-top:16px;color:#c9a46a}
+.env .ep i{display:block;width:90px;height:26px;margin-top:10px;border-top:1px solid #e8d8c4;border-bottom:1px solid #e8d8c4}
+.env .ef{background:#7f4056;clip-path:polygon(0 100%,0 0,50% 58%,100% 0,100% 100%);z-index:2;border-radius:6px}
+.env .ef2{background:#a05a70;clip-path:polygon(0 0,100% 0,50% 62%);z-index:3;transform-origin:top;transition:transform .75s ease,z-index 0s .38s}
+.env .es{left:calc(50% - 16px);top:70px;width:32px;height:32px;inset:auto;z-index:4;display:grid;place-items:center;border-radius:50%;background:#e3c88e;color:#7a3d52;font-size:.9rem;transition:opacity .4s}
+.env.open .ef2{transform:rotateX(180deg);z-index:0}
+.env.open .es{opacity:0}
+.env.open .ep{transform:translateY(-92px)}
+#envStage.leave{animation:fadeout .6s forwards}
+@keyframes fadeout{to{opacity:0;transform:translateY(-14px)}}
+/* easter egg */
+.egg{position:fixed;left:7%;top:13%;z-index:6;width:38px;height:38px;border:0;background:none;color:var(--gold);font-size:1.05rem;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 1.2s;animation:tw 3s ease-in-out infinite}
+@keyframes tw{50%{transform:scale(1.4);text-shadow:0 0 14px #e3c88e}}
+body[data-s=cake] .egg,body[data-s=wishes] .egg,body[data-s=letter] .egg{opacity:.85;pointer-events:auto}
+.eggmsg{position:fixed;left:7%;top:calc(13% + 42px);z-index:6;max-width:min(260px,72vw);font:italic 1.02rem/1.5 "Playfair Display",serif;color:var(--gold);opacity:0;transform:translateY(6px);transition:opacity .8s,transform .8s;pointer-events:none}
+.eggmsg.on{opacity:1;transform:none}
+/* loading dots, tombol PIN berurutan, balon */
+.ld{display:flex;gap:10px;margin-top:22px}
+.ld i{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:hop 1.2s ease-in-out infinite}
+.ld i:nth-child(2){animation-delay:.15s}.ld i:nth-child(3){animation-delay:.3s}
+@keyframes hop{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-10px);opacity:1}}
+#pin.on .pad button{animation:rise .6s backwards;animation-delay:calc(.35s + var(--i)*.05s)}
+.pad button:active{transform:scale(.88)}
+#balloons{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0;transition:opacity 1s}
+body.party #balloons{opacity:1}body.dark #balloons{opacity:0}
+.bl{position:absolute;bottom:-110px;width:42px;height:54px;border-radius:50% 50% 48% 48%;opacity:.8;animation:upb linear infinite}
+.bl:after{content:"";position:absolute;top:100%;left:50%;width:1px;height:60px;background:#ffffff44}
+@keyframes upb{to{transform:translate(var(--dx),-125vh)}}
+
+/* akhir: gelap total + satu titik */
+#end{background:#000}
+#end.on>*{animation:none}
+#halo{position:absolute;width:min(900px,160vw);height:min(900px,160vw);border-radius:50%;background:radial-gradient(circle,#e3c88e66 0%,#e3c88e22 30%,transparent 62%);opacity:0;transition:opacity .08s}
+#star{position:relative;width:18px;height:18px;border-radius:50%;background:#fffbea;box-shadow:0 0 18px 8px #fff4c8,0 0 55px 26px #e3c88eee,0 0 140px 70px #e3c88e88;opacity:0;transition:opacity .06s}
+#star.lit,#halo.lit{opacity:1}
+.again{position:absolute;bottom:34px;margin:0;opacity:0;pointer-events:none;transition:opacity 2s;border-color:#e3c88e55;color:#e3c88ecc}
+.again.show{opacity:1;pointer-events:auto}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:9}
+</style>
+</head>
+<body>
+
+<!-- ========== EDIT DI SINI ========== -->
+<script>
+const CONFIG = {
+  nama: "[kanza]",
+  pengirim: "[hazib]",
+  pin: "1231",
+  lagu: "golden-hour.mp3",  // file lagu (taruh satu folder dengan index.html); kosongkan kalau tanpa musik
+  volume: 0.7,
+  putaranMorse: 2,          // berapa kali kedipan morse diulang sebelum titik emas padam pelan-pelan untuk terakhir kalinya
+  tombolUlang:  true,        // tombol "Ulangi dari awal" muncul setelah titik padam; false = tidak ada tombol (benar-benar final)
+  tanggalBuka: "2026-11-16 00:00", // gembok tanggal, format TAHUN-BULAN-TANGGAL JAM:MENIT (jam WIB). Contoh 31 Desember: "2026-12-31 00:00". Kosongkan "" kalau tanpa gembok. Tambah #buka di akhir link untuk mengetes.
+  kecepatanKetik: 38,       // milidetik per huruf saat surat diketik (makin kecil makin cepat)
+  doa: [
+    "Semoga sehat selalu", "Semoga panjang umur nya", "Semoga cita-citamu tercapai", "Semoga hari-harimu ga di penuhi oleh revisi",
+    "Semoga rezekimu lancar", "Semoga dikelilingi orang baik", "Semoga urusanmu selalu dimudahkan", "Semoga nggak terlalu sering ketemu revisi. WKWK."
+  ],
+  rahasiaKecil: "Waduh, ketemu juga!. Aku penasaran, butuh berapa lama sampe kamu sadar kalo bintang kecil ini ternyata menyimpan sesuatu? (terjemahkan dengan. hati-hati, salah dikit aja bisa ngubah arti nya.)", // easter egg
+  surat: [
+    "Selamat ulang tahun. Aku sebenarnya bingung mau tulis apa. Ada banyak yang pengen aku sampaikan, tapi aku sendiri kaga tau harus mulai dari mana.",
+    "Aku ga tau ke depannya akan seperti apa. Tapi untuk sekarang, aku cuma ingin kamu menikmati hari spesial kamu.",
+    "Sekali lagi, selamat ulang tahun, ya. Jangan lupa tugas Pak Bagus HIDUP REVISI ",
+    "Jaga diri ya."
+  ]
+};
+</script>
+<!-- ================================== -->
+
+<section id="lock" class="screen">
+  <p class="mute" id="lockSub" style="max-width:30ch"></p>
+  <div class="cd"><div><b id="cdD">0</b><small>hari</small></div><div><b id="cdH">00</b><small>jam</small></div><div><b id="cdM">00</b><small>menit</small></div><div><b id="cdS">00</b><small>detik</small></div></div>
+</section>
+
+<section id="load" class="screen on"><p class="loadtxt">Menyiapkan sesuatu yang spesial…</p><div class="ld"><i></i><i></i><i></i></div></section>
+
+<section id="pin" class="screen">
+  <h1>Untuk <i id="n1"></i></h1>
+  <p class="mute">Masukkan kode yang aku kirim</p>
+  <div class="dots" id="dots"><span></span><span></span><span></span><span></span></div>
+  <div class="pad" id="pad"></div>
+  <p class="msg" id="pmsg" aria-live="polite"></p>
+</section>
+
+<section id="cake" class="screen">
+  <h1 class="big">Happy <i>Birthday</i><br><span id="n2"></span></h1>
+  <button class="cakeBtn" id="cakeBtn" aria-label="Tiup lilin">
+    <div class="cake" id="cakeEl">
+      <div class="tier t1"></div><div class="tier t2"></div><div class="tier t3"></div>
+      <div class="can" style="left:72px"><i></i></div>
+      <div class="can" style="left:96px"><i style="animation-delay:.4s"></i></div>
+      <div class="can" style="left:121px"><i style="animation-delay:.8s"></i></div>
+    </div>
+  </button>
+  <p class="mute" id="chint">Ketuk kuenya, lalu buat satu permintaan.</p>
+  <button class="btn" id="toLetter" style="display:none">Lanjut</button>
+</section>
+
+<section id="wishes" class="screen">
+  <h1>Doa <i>kecil</i></h1>
+  <p class="mute" id="wishHint">Ketuk gelembungnya satu per satu.</p>
+  <div class="field" id="field"></div>
+  <button class="btn hidden" id="toEnv">Lanjut</button>
+</section>
+
+<section id="letter" class="screen">
+  <div id="envStage">
+    <p class="mute">Ada surat untukmu. Ketuk amplopnya.</p>
+    <button class="env" id="env" aria-label="Buka amplop">
+      <div class="eb"></div><div class="ep"><span>✦</span><i></i></div><div class="ef"></div><div class="ef2"></div><div class="es">♥</div>
+    </button>
+  </div>
+  <article class="letter hidden" id="letterCard">
+    <h2>Untuk <i id="n3"></i></h2>
+    <div id="body"></div>
+    <p class="sign" id="sign"></p>
+  </article>
+  <button class="btn hidden" id="toEnd">Selesai</button>
+</section>
+
+<section id="end" class="screen"><div id="halo"></div><div id="star"></div><button class="btn again" id="again">Ulangi dari awal</button></section>
+
+<div id="balloons"></div>
+<button class="egg" id="egg" aria-label="Bintang kecil">✦</button>
+<div class="eggmsg" id="eggMsg" aria-live="polite"></div>
+<button class="music" id="mute" aria-label="Nyalakan atau matikan musik">♪</button>
+<canvas id="bg"></canvas>
+<canvas id="fx"></canvas>
+
+<script>
+const $=id=>document.getElementById(id), C=CONFIG;
+["n1","n2","n3"].forEach(i=>$(i).textContent=C.nama);
+$("sign").textContent="— "+C.pengirim;
+const BL=["#d9a3a8","#e3c88e","#b56c86","#f0c3c4"];
+for(let i=0;i<10;i++){const b=document.createElement("div");b.className="bl";
+  b.style.cssText="left:"+(4+i*10+Math.random()*4)+"%;background:"+BL[i%4]+";animation-duration:"+(9+Math.random()*6)+"s;animation-delay:"+(Math.random()*5)+"s;--dx:"+(Math.random()*60-30)+"px";
+  $("balloons").appendChild(b)}
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));$(id).classList.add("on");document.body.classList.toggle("dark",id==="end");document.body.dataset.s=id}
+
+// gembok tanggal: kalau belum hari-H, tampilkan hitung mundur
+const BLN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+function parseOpen(str){
+  const m=/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/.exec(String(str).trim());
+  if(!m)return {bad:"Format harus TAHUN-BULAN-TANGGAL JAM:MENIT, contoh 2026-12-31 00:00."};
+  const [y,mo,d,h=0,mi=0]=m.slice(1).map(Number);
+  if(mo<1||mo>12)return {bad:"Bulan harus 1 sampai 12."};
+  const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();   // jumlah hari di bulan itu
+  if(d<1||d>dim)return {bad:BLN[mo-1]+" "+y+" hanya punya "+dim+" hari, jadi tanggal "+d+" tidak ada."};
+  return {ms:Date.UTC(y,mo-1,d,h,mi)-7*36e5,label:String(d).padStart(2,"0")+"/"+String(mo).padStart(2,"0")+"/"+y+(h||mi?" "+String(h).padStart(2,"0")+"."+String(mi).padStart(2,"0"):"")};
+}
+const OP=C.tanggalBuka?parseOpen(C.tanggalBuka):null, OPEN=OP&&OP.ms?OP.ms:0;
+let lockT;
+const goPin=()=>{show("load");setTimeout(()=>show("pin"),2400)};
+const tick=()=>{
+  const ms=OPEN-Date.now();
+  if(ms<=0){clearInterval(lockT);goPin();return}
+  const t=Math.floor(ms/1000),z=n=>String(n).padStart(2,"0");
+  $("cdD").textContent=Math.floor(t/86400);$("cdH").textContent=z(Math.floor(t%86400/3600));
+  $("cdM").textContent=z(Math.floor(t%3600/60));$("cdS").textContent=z(t%60);
+};
+if(location.hash==="#buka"||!OP){show("load");setTimeout(()=>show("pin"),2400)}
+else if(OP.bad){ // tanggal di CONFIG salah: tampilkan pesannya supaya kamu langsung sadar
+  document.querySelector(".cd").style.display="none";
+  $("lockSub").textContent="Tanggal di CONFIG tidak valid. "+OP.bad;show("lock");
+}else if(Date.now()<OPEN){
+  show("lock");tick();lockT=setInterval(tick,1000);
+}else{show("load");setTimeout(()=>show("pin"),2400)}
+
+// musik: mulai saat PIN pertama diketuk (browser butuh interaksi), hilang pelan-pelan saat masuk layar morse (layar morse sunyi)
+const music=new Audio(C.lagu||"");let musicOn=false,fadeT;
+function fade(to,sec){clearInterval(fadeT);const from=music.volume,steps=Math.max(1,sec*30);let i=0;
+  fadeT=setInterval(()=>{i++;music.volume=Math.max(0,Math.min(1,from+(to-from)*i/steps));if(i>=steps)clearInterval(fadeT)},33)}
+function startMusic(){
+  if(musicOn||!C.lagu)return;musicOn=true;music.currentTime=0;music.volume=0;
+  music.play().then(()=>{fade(C.volume||.7,3);$("mute").classList.add("show")}).catch(()=>{musicOn=false});
+}
+function stopMusic(){
+  if(!musicOn)return;
+  fade(0,1.5);$("mute").classList.remove("show");setTimeout(()=>music.pause(),1600);
+}
+$("mute").onclick=()=>{music.muted=!music.muted;$("mute").classList.toggle("off",music.muted)};
+
+// PIN
+let cur="";
+const dots=[...$("dots").children];
+"123456789".split("").concat(["C","0","⌫"]).forEach((k,i)=>{
+  const b=document.createElement("button");b.textContent=k;b.style.setProperty("--i",i);
+  if(k==="C"||k==="⌫")b.className="u";
+  b.onclick=()=>key(k);$("pad").appendChild(b);
+});
+function paint(){dots.forEach((d,i)=>d.classList.toggle("f",i<cur.length))}
+function key(k){
+  if(/^\d$/.test(k))startMusic();
+  if(k==="C")cur="";else if(k==="⌫")cur=cur.slice(0,-1);
+  else if(cur.length<4)cur+=k;
+  paint();
+  if(cur.length===4){
+    if(cur===C.pin){$("pmsg").textContent="Selamat datang.";burst(cv.width/2,cv.height/2);setTimeout(()=>{show("cake")},700)}
+    else{$("pmsg").textContent="Kodenya belum tepat.";$("dots").classList.add("shake");
+      setTimeout(()=>{cur="";paint();$("pmsg").textContent="";resetFlow();$("dots").classList.remove("shake")},700)}
+  }
+}
+addEventListener("keydown",e=>{if($("pin").classList.contains("on")){if(/^\d$/.test(e.key))key(e.key);if(e.key==="Backspace")key("⌫")}});
+
+// partikel latar
+const bg=$("bg"),bx=bg.getContext("2d");let ps=[];
+function bgs(){bg.width=innerWidth;bg.height=innerHeight}addEventListener("resize",bgs);bgs();
+for(let i=0;i<55;i++)ps.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:1+Math.random()*2.6,vy:.15+Math.random()*.4,t:Math.random()*6,c:i%3?"227,200,142":"217,163,168"});
+(function bgLoop(){bx.clearRect(0,0,bg.width,bg.height);
+  ps.forEach(p=>{p.y-=p.vy;p.t+=.02;p.x+=Math.sin(p.t)*.3;if(p.y<-10){p.y=bg.height+10;p.x=Math.random()*bg.width}
+    bx.beginPath();bx.fillStyle="rgba("+p.c+","+(.3+.25*Math.sin(p.t*2))+")";bx.arc(p.x,p.y,p.r,0,6.283);bx.fill()});
+  requestAnimationFrame(bgLoop)})();
+
+// confetti + kembang api
+const cv=$("fx"),cx=cv.getContext("2d");let bits=[],sp=[],run=false;
+const rs=()=>{cv.width=innerWidth;cv.height=innerHeight};addEventListener("resize",rs);rs();
+const COLS=["#e3c88e","#d9a3a8","#f6e9e6","#b56c86"];
+function start(){if(!run){run=true;loop()}}
+function confetti(){
+  for(let i=0;i<150;i++)bits.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.6,w:5+Math.random()*5,h:8+Math.random()*8,c:COLS[i%4],vy:1.2+Math.random()*2,vx:-.6+Math.random()*1.2,r:Math.random()*6,vr:-.07+Math.random()*.14});
+  start();
+}
+function burst(x,y){
+  for(let i=0;i<54;i++){const a=Math.random()*6.283,v=2+Math.random()*4.5;sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,c:COLS[i%4]})}
+  start();
+}
+function loop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  bits.forEach(b=>{b.y+=b.vy;b.x+=b.vx;b.r+=b.vr;cx.save();cx.translate(b.x,b.y);cx.rotate(b.r);cx.fillStyle=b.c;cx.fillRect(-b.w/2,-b.h/2,b.w,b.h);cx.restore()});
+  sp.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.05;q.vx*=.985;q.l-=.011;cx.globalAlpha=Math.max(q.l,0);cx.fillStyle=q.c;cx.beginPath();cx.arc(q.x,q.y,2.4,0,6.283);cx.fill()});
+  cx.globalAlpha=1;
+  bits=bits.filter(b=>b.y<cv.height+30);sp=sp.filter(q=>q.l>0);
+  if(bits.length||sp.length)requestAnimationFrame(loop);else{run=false;cx.clearRect(0,0,cv.width,cv.height)}
+}
+
+// kue
+let blown=false;
+$("cakeBtn").onclick=()=>{
+  if(blown)return;blown=true;
+  $("cakeEl").classList.add("out");document.body.classList.add("party");$("chint").style.display="none";
+  setTimeout(confetti,500);[400,800,1250,1700].forEach(t=>setTimeout(()=>burst(cv.width*(.15+Math.random()*.7),cv.height*(.15+Math.random()*.3)),t));
+  setTimeout(()=>{$("toLetter").style.display="inline-block"},1800);
+};
+$("toLetter").onclick=()=>{show("wishes");initWishes()};
+
+// doa melayang: gelembung berisi harapan, ketuk untuk memecahkan
+let wishT,wishLeft=0;
+function initWishes(){
+  const f=$("field");f.innerHTML="";const n=C.doa.length,cols=3,rows=Math.ceil(n/cols);wishLeft=n;
+  $("wishHint").textContent="Ketuk gelembungnya satu per satu.";
+  C.doa.forEach((t,i)=>{
+    const b=document.createElement("button");b.className="wish";b.textContent=t;
+    const j=()=>(Math.random()-.5)*12;
+    b.style.cssText="left:"+(((i%cols)+.5)/cols*100+j())+"%;top:"+((Math.floor(i/cols)+.5)/rows*100+j())+"%;--dx:"+((Math.random()-.5)*28)+"px;--dy:"+((Math.random()-.5)*28)+"px;--dur:"+(4+Math.random()*3)+"s;--dl:"+(-Math.random()*4)+"s";
+    b.onclick=()=>{
+      if(b.classList.contains("pop"))return;b.classList.add("pop");
+      const r=b.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2);
+      if(--wishLeft===0){$("wishHint").textContent="Semua doanya sudah sampai. ✦";showEnvBtn()}
+    };
+    f.appendChild(b);
+  });
+  clearTimeout(wishT);wishT=setTimeout(showEnvBtn,10000);
+}
+const showEnvBtn=()=>$("toEnv").classList.remove("hidden");
+$("toEnv").onclick=()=>show("letter");
+
+// amplop + surat diketik pelan
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let typeId=0,skipType=false;
+async function typeLetter(){
+  const id=++typeId;skipType=false;const body=$("body");body.innerHTML="";
+  for(const t of C.surat){
+    const p=document.createElement("p"),caret=document.createElement("span");caret.className="caret";body.appendChild(p);
+    for(let i=1;i<=t.length;i++){
+      if(id!==typeId)return;
+      if(skipType){p.textContent=t;break}
+      p.textContent=t.slice(0,i);p.appendChild(caret);
+      await wait((C.kecepatanKetik||38)+(/[.,!?]/.test(t[i-1])?240:0));
+    }
+    caret.remove();await wait(skipType?0:450);
+  }
+  if(id!==typeId)return;
+  $("sign").style.opacity=1;await wait(900);
+  if(id===typeId)$("toEnd").classList.remove("hidden");
+}
+$("letterCard").onclick=()=>{skipType=true};
+$("env").onclick=()=>{
+  const e=$("env");if(e.classList.contains("open"))return;e.classList.add("open");
+  const r=e.getBoundingClientRect();setTimeout(()=>burst(r.left+r.width/2,r.top+30),700);
+  setTimeout(()=>$("envStage").classList.add("leave"),2000);
+  setTimeout(()=>{$("envStage").classList.add("hidden");$("letterCard").classList.remove("hidden");typeLetter()},2650);
+};
+function resetFlow(){
+  typeId++;$("env").classList.remove("open");$("envStage").classList.remove("leave","hidden");
+  $("letterCard").classList.add("hidden");$("body").innerHTML="";$("sign").style.opacity=0;$("toEnd").classList.add("hidden");
+  clearTimeout(wishT);$("field").innerHTML="";$("toEnv").classList.add("hidden");$("eggMsg").classList.remove("on");
+}
+
+// easter egg: bintang kecil di latar
+let eggT;
+$("egg").onclick=()=>{
+  const r=$("egg").getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2);
+  $("eggMsg").textContent=C.rahasiaKecil;$("eggMsg").classList.add("on");
+  clearTimeout(eggT);eggT=setTimeout(()=>$("eggMsg").classList.remove("on"),6000);
+};
+
+// layar akhir: morse "I LOVE YOU", diulang
+const M={I:"..",L:".-..",O:"---",V:"...-",E:".",Y:"-.--",U:"..-"};
+const U=300; // 1 satuan = 0.3 detik
+const seq=[];
+"I LOVE YOU".split(" ").forEach((w,wi,ws)=>{
+  w.split("").forEach((ch,ci,cs)=>{
+    M[ch].split("").forEach((s,si,ss)=>{
+      seq.push([1,s==="."?U:U*3]);
+      if(si<ss.length-1)seq.push([0,U]);
+    });
+    if(ci<cs.length-1)seq.push([0,U*3]);
+  });
+  if(wi<ws.length-1)seq.push([0,U*7]);
+});
+seq.push([0,U*20]); // jeda sebelum ulang
+let blinking=false,blinkT,round=0;
+function blink(i=0){
+  const [on,d]=seq[i];
+  $("star").classList.toggle("lit",!!on);$("halo").classList.toggle("lit",!!on);
+  if(i===seq.length-1&&++round>=(C.putaranMorse||3)){blinkT=setTimeout(fadeOutDot,1500);return}
+  blinkT=setTimeout(()=>blink((i+1)%seq.length),d);
+}
+// setelah putaran terakhir: titik menyala sekali lagi, lalu padam sangat pelan
+function fadeOutDot(){
+  ["star","halo"].forEach(id=>$(id).classList.add("lit"));
+  blinkT=setTimeout(()=>{
+    ["star","halo"].forEach(id=>{$(id).style.transition="opacity 5s ease-out";$(id).classList.remove("lit")});
+    if(C.tombolUlang!==false)blinkT=setTimeout(()=>$("again").classList.add("show"),6500);
+  },800);
+}
+function goEnd(){show("end");stopMusic();if(!blinking){blinking=true;blinkT=setTimeout(blink,3500)}}
+$("toEnd").onclick=goEnd;
+$("again").onclick=()=>{
+  clearTimeout(blinkT);blinking=false;clearInterval(fadeT);music.pause();music.currentTime=0;musicOn=false;
+  round=0;["star","halo"].forEach(i=>{$(i).style.transition="";$(i).classList.remove("lit")});$("again").classList.remove("show");
+  cur="";paint();$("pmsg").textContent="";
+  document.body.classList.remove("party");blown=false;$("cakeEl").classList.remove("out");$("chint").style.display="";$("toLetter").style.display="none";
+  show("pin");
+};
+</script>
+</body>
+</html>
